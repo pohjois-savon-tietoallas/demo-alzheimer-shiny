@@ -47,9 +47,9 @@ We are grateful for all [contributors](https://github.com/pohjois-savon-tietoall
   <img src="./img/image004.png" height="90" title="hover text">
 </p>
 
-**Datasets** are synthetic, but represent real world data. Original datasets are not freely available. If you are interested of the datasets, please contact [Reijo Sund](mailto://reijo.sund@uef.fi).</br>
+**Datasets** are synthetic, but represent real world data. Original datasets are not freely available. If you are interested of the datasets, please contact [Reijo Sund](mailto:reijo.sund@uef.fi).</br>
 
-**Citing:** Kindly cite this work as  follows; Jani Miettinen and Reijo Sund. Alzheimer disease patient timeline Shiny Application. URL: <https://github.com/pohjois-savon-tietoallas/alzdemo> </br>
+**Citing:** Kindly cite this work as  follows; Jani Miettinen and Reijo Sund. Alzheimer disease patient timeline Shiny Application. URL: <https://github.com/pohjois-savon-tietoallas/demo-alzheimer-shiny> </br>
 
 
 ![](https://i.creativecommons.org/l/by/4.0/88x31.png) This work is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/). This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, so long as attribution is given to the creator. The license allows for commercial use.</br>
