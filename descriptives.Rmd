@@ -1,0 +1,632 @@
+---
+title: "Work document: Alzheimer demo data"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    toc_float: true
+    theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Target of this demo project is to identify factors/variables associate with Alzheimer disease in KUH data lake demo dataset. Also interest is to find out if there is predictive power in these factors/variables to identify upcoming Alzheimer disease diagnose. Project is available in Gitlab <https://github.com/pohjois-savon-tietoallas/alzdemo>, ask permission to project from [jani.miettinen'at'uef.fi](mailto://jani.miettinen@uef.fi).
+
+
+**First step: Explorative data analysis and dataset visualizations**
+
+- General descriptitives of the datasets
+- In what age Alzheimer disease is diagnosed?
+- What treatments and diagnoses persons have before Alzheimer disease diagnose?
+- What medicine impursement persons have before Alzheimer disease diagnose?
+- How many days instutionalized 1 year, 2-5 years before diagnose?
+
+
+**Second step: Identify vars/factors correlating with Alzheimer disease diagnose**
+
+- How data can be classified to different risk groups
+- Statistical methods for classifying subjects, indexing, trend meter, correlations, ...
+
+
+**Third step: Build a model**
+
+- Collect variables associated with Alz-diagnose
+- Test model predictive power
+
+
+
+# Datasets
+
+ 
+```{r}
+library(tidyverse)
+library(dplyr) # required for data wrangling mutate (part of library(tidyverse))
+library(Hmisc) # required for Hmisc::describe function (Imporant to load this first. Otherwise the dplyr::summarize will be overridden.)
+library(tidyverse) # tools for data wrangling
+library(lubridate) # required for Date manipulation
+library(wordcloud)
+library(RColorBrewer)
+
+load(file="/dbfs/mnt/demodata/norpen.RData", verbose=T)
+```
+
+## Persons
+
+ - Includes demographics of "persons" who have obtained a special reimbursement for medications related to AD during 2005-2012
+ 
+```{r}
+str(persons) # 13 431
+summary(persons)
+```
+ 
+ 
+## Special Reimbursements
+
+ - data from the Special Reimbursement Register
+ - Entitlements to higher medication reimbursement due to chronic diseases with start and end dates and classification numbers
+ 
+```{r}
+str(srr)
+summary(srr)
+```
+
+Diagnoses 
+
+
+```{r}
+d1 <- srr %>% group_by(diag) %>% summarise(n=n()) %>% filter(diag != '')
+wordcloud(words = d1$diag, freq = d1$n, colors = c("#999999", "#E69F00", "#56B4E9","#56B4E9"))
+```
+
+```{r}
+d1 <- srr %>% group_by(sk1) %>% summarise(n=n())
+wordcloud(words = d1$sk1, freq = d1$n, colors = c("#999999", "#E69F00", "#56B4E9","#56B4E9"))
+```
+
+
+ 
+## drugs
+ 
+ - Reimbursed medications from the Finnish Prescription Register
+ - ATC code, dispensing date, strength, number of tablets dispensed
+
+```{r}
+str(drugs) # 402 180
+summary(drugs)
+```
+
+ 
+## care_reg
+
+ - data from the Finnish Care Register
+ - primary and secondary discharge diagnoses, medical procedures, admission and discharge dates
+ - in ICD-8 (admissions in 1972-1986), ICD-9 (1987-1995) and ICD-10 (1996->) formats
+
+```{r}
+str(care_reg)
+summary(care_reg)
+```
+
+Variables:
+ 
+ - idnum = identification number
+ - adm_date = date of admission
+ - disch_date = date of discharge
+ - pdgo = primary diagnosis (ICD-10)
+ - pdge = primary diagnosis (ICD-10)
+ - sdg1o = secondary diagnosis (ICD-10)
+ - sdg1e = secondary diagnosis (ICD-10)
+ - sdg2o = secondary diagnosis (ICD-10)
+ - sdg2e = secondary diagnosis (ICD-10)
+ - ptmpk1 = surgical procedure (NOMESCO)
+ - ptmpk2 = surgical procedure (NOMESCO)
+ - ptmpk3 = surgical procedure (NOMESCO)
+ - mtmp1k1 = surgical procedure (NOMESCO)
+ - mtmp2k1 = surgical procedure (NOMESCO)
+ - pdg = primary diagnosis (ICD-9)
+ - sdg1 = 1st secondary diagnosis (ICD-9)
+ - sdg2 = 2nd secondary diagnosis (ICD-9)
+ - dg1 = diagnosis (ICD-8)
+ - dg2 = diagnosis (ICD-8)
+ - dg3 = diagnosis (ICD-8)
+ - dg4 = diagnosis (ICD-8)
+
+
+## inst_reg
+
+ - long-term institutionalizations from the SII's register
+ - start and end dates
+
+```{r}
+str(inst_reg)
+summary(inst_reg)
+```
+
+
+```{r}
+# hoitojaksot jotka olleet ennen diagnoosia (alku ja lopppu ennen diagnoosi), kestot
+inst_reg %>% 
+  left_join(persons) %>% 
+  mutate(pv1 = erko307_pv - lhjalkpv,
+         pv2 = erko307_pv - lhjlakpv,
+         inst_reg_days = lhjlakpv - lhjalkpv) %>% 
+  filter(pv1 > 0 & pv2 > 0) %>% 
+  select(idnum, pv1, inst_reg_days) -> dplot
+
+ggplot(dplot) +
+  geom_point(aes(x=pv1, y=inst_reg_days)) 
+```
+
+
+## mort
+
+ - data from the Causes of Death register
+ - date of death
+ 
+```{r}
+str(mort)
+summary(mort)
+```
+
+
+
+
+
+# Explorative data analysis
+
+## Persons
+
+```{r}
+# Persons data join ----
+persons <- left_join(persons, mort)
+# classify vars
+persons$sp <- factor(persons$sp, labels=c("Male", "Female"))
+# First, start by calculating age at the time of AD diagnosis;
+persons <- mutate(persons,
+                  alz_age=as.numeric((erko307_pv-syntpv)/365.25),
+                  alz_age_yrs=as.numeric(round(alz_age)),
+                  erko_yr=year(erko307_pv)  #  or =format(erko307_pv,"%Y")  # year of AD diagnosis
+)
+# head(persons)
+summary(persons)
+```
+
+```{r}
+# age distruribution
+d1 <- persons %>% group_by(format(persons$syntpv, "%Y"), sp) %>% summarise(n=n())
+d1$year <- d1$`format(persons$syntpv, "%Y")`
+ggplot(d1) +
+  geom_bar(stat = "identity", aes(x=year, y=n, fill=sp)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Birth year distribution") +
+  scale_fill_manual(values=c("dodgerblue3", "orchid2"))
+```
+
+```{r}
+# gender
+d1 <- persons %>% group_by(sp) %>% summarise(n=n())
+ggplot(d1) +
+  geom_bar(aes(x=sp, y=n, fill=sp), stat = "identity") +
+  geom_text(aes(x=sp, y=n, label = n)) +
+  labs(title = "Gender distribution") + 
+  scale_fill_manual(values=c("dodgerblue3", "orchid2"))
+```
+
+```{r}
+# mortality
+d1 <- persons %>% group_by(format(persons$kuolpv, "%Y"), sp) %>% summarise(n=n())
+d1$year <- d1$`format(persons$kuolpv, "%Y")`
+ggplot(d1[!is.na(d1$year),]) +
+  geom_bar(stat = "identity", aes(x=year, y=n, fill=sp)) + 
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Mortality, year") +
+  scale_fill_manual(values=c("dodgerblue3", "orchid2"))
+```
+
+
+```{r}
+# mortality after diagnose
+d1 <- persons %>% 
+  mutate(died_after_diag = kuolpv - erko307_pv) %>% 
+  filter(!is.na(died_after_diag)) %>% 
+  group_by(died_after_diag, sp) %>% 
+  summarise(n=n()) %>% 
+  mutate(
+    died_after_diag_cat = cut(as.integer(died_after_diag),
+                              breaks=c(-Inf, 180, 365, 730, 1095, Inf),
+                              labels = c("0-180 days", "181-365 days", "366-730 days", "730-1095 days", "1095+")
+                              )
+  )
+ggplot(d1) +
+  geom_bar(stat = "identity", aes(x=died_after_diag_cat, y=n, fill=sp)) + 
+  coord_flip() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(title = "Mortality, year") +
+  scale_fill_manual(values=c("dodgerblue3", "orchid2"))
+```
+
+
+```{r}
+# What age is alzheimer disease diagnosed
+d1 <- persons %>% group_by(alz_age_yrs, sp) %>% summarise(n=n())
+ggplot(d1) +
+  geom_bar(aes(x=alz_age_yrs, y=n, fill=sp), stat="identity") +
+  labs(title = "What age Alzerheim is diagnosed", subtitle = "by gender", caption = "") + 
+  scale_fill_manual(values=c("dodgerblue3", "orchid2"))
+```
+
+
+
+
+
+## Medicines
+
+```{r}
+# most common medicines
+# medicines bought 1-4 yrs before diagnose
+# medicines bought 1 yr before diagnose
+
+## how much reimbursements per years
+
+## by year, what medicines people bought 
+d1 <- drugs %>% 
+  group_by(year(otpvm), substr(atc,1,3)) %>% 
+  summarise(persons=length(unique(idnum)),
+            plkm=sum(plkm),
+            n=n())
+
+d1$year <- d1$`year(otpvm)`
+d1$atc3 <- d1$`substr(atc, 1, 3)`
+
+# ggplot(d1)+
+#   geom_line(aes(x=year, y=n, color=atc3))
+
+ggplot(d1)+
+  geom_line(aes(x=year, y=persons, color=atc3)) +
+  labs(title="Number of persons who bought medicines (ATC3) by year ")
+
+```
+
+
+```{r}
+d1 <- drugs %>% group_by(substr(atc, 1, 3)) %>% summarise(n=n())
+d1$atc <- d1$`substr(atc, 1, 3)`
+ggplot(d1) +
+  geom_bar(aes(x=atc, y=n, fill=atc), stat="identity") +
+  labs(title = "Most common medicine reimbursements (ATC3 level)")
+```
+
+```{r}
+d1 <- drugs %>% 
+  filter(substr(atc, 1, 3) == "N05") %>% 
+  group_by(atc) %>% 
+  summarise(n=n())
+
+ggplot(d1) +
+  geom_bar(aes(x=atc, y=n), stat="identity") +
+  coord_flip() +
+  labs(title = "ATC N05 medicine reimbursements")
+```
+
+### 1 year before
+
+```{r}
+```
+
+
+
+
+### 2-5 years before
+
+```{r}
+
+```
+
+
+
+
+## Care registry primary diagnoses
+
+```{r}
+# what other diagnoses people have 1yr before alz-diagnose
+# 2-5yrs before alz-diganose
+
+# Join person data to care register data
+d <- left_join(persons, care_reg)
+d1 <- d %>% filter(adm_date >= "1996-01-01")
+# d1[d1$pdgo == "",] # is there empty, YES
+
+d1$length_of_carereg <- d1$disch_date - d1$adm_date
+
+
+
+```
+
+### Within 1 year before diagnose
+
+```{r}
+# hoitojakso alkanut 1v sisällä, primary diagnose ICD-10
+# lenght of care reg 
+d2 <- d1 %>% 
+  filter(erko307_pv - adm_date <= 365.25,  
+         erko307_pv - adm_date >=0 )
+d2_agg <- d2 %>% 
+  group_by(pdg) %>% 
+  summarise(n=n(), 
+            persons=length(unique(idnum)),
+            mean_of_length=mean(length_of_carereg)
+            )
+
+d2_agg$mean_of_length <- as.integer(d2_agg$mean_of_length)
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=persons, y=n)) +
+  geom_text(aes(x=persons, y=n, label = pdg))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=persons, y=n)) +
+  geom_text(aes(x=persons, y=n, label = pdg, size=mean_of_length))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=persons, y=n)) +
+  geom_text(aes(x=persons, y=mean_of_length, label = pdg, size=n ), 
+            position=position_jitter(width=1,height=1))
+
+
+d2_agg %>% arrange(-persons, -n, -mean_of_length)
+```
+
+
+
+
+```{r}
+## how many days in 
+d2_agg <- d2 %>% 
+  group_by(idnum) %>% 
+  summarise(days=as.integer(sum(length_of_carereg)),
+            n=n()
+            )
+
+ggplot(d2_agg) +
+  geom_histogram(aes(days), bins = 20) +
+  labs(title = "How many days in care?")
+summary(d2_agg)
+```
+
+
+
+
+
+### Within 1-5 years before diagnose
+
+```{r}
+
+
+d2 <- d1 %>% 
+  filter(erko307_pv - adm_date <= 365.25*5,  
+         erko307_pv - adm_date >=365.25 )
+d2_agg <- d2 %>% 
+  group_by(pdg) %>% 
+  summarise(n=n(), 
+            persons=length(unique(idnum)),
+            mean_of_length=mean(length_of_carereg)
+  )
+d2_agg$mean_of_length <- as.integer(d2_agg$mean_of_length)
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=persons, y=n)) +
+  geom_text(aes(x=persons, y=n, label = pdg))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=persons, y=n)) +
+  geom_text(aes(x=persons, y=n, label = pdg, size=mean_of_length))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=persons, y=n)) +
+  geom_text(aes(x=persons, y=mean_of_length, label = pdg, size=n ), 
+            position=position_jitter(width=1,height=1))
+
+
+d2_agg %>% arrange(-persons, -n, -mean_of_length)
+
+```
+
+### 5+ years before diagnose
+
+- since 1996
+
+```{r}
+
+d2 <- d1 %>% 
+  filter(erko307_pv - adm_date >=365.25*5 )
+d2_agg <- d2 %>% 
+  group_by(pdg) %>% 
+  summarise(n=n(), 
+            persons=length(unique(idnum)),
+            mean_of_length=mean(length_of_carereg)
+  )
+d2_agg$mean_of_length <- as.integer(d2_agg$mean_of_length)
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=persons, y=n)) +
+  geom_text(aes(x=persons, y=n, label = pdg))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=persons, y=n)) +
+  geom_text(aes(x=persons, y=n, label = pdg, size=mean_of_length))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=persons, y=n)) +
+  geom_text(aes(x=persons, y=mean_of_length, label = pdg, size=n ), 
+            position=position_jitter(width=1,height=1))
+
+
+d2_agg %>% arrange(-persons, -n, -mean_of_length)
+
+```
+
+
+
+## Long-term institutionalizations
+
+```{r}
+length(unique(inst_reg$idnum))
+
+d1 <- inst_reg
+d1$kesto <- difftime(d1$lhjlakpv, d1$lhjalkpv, units = c("days"))
+
+ggplot(d1) + 
+  geom_histogram(aes(d1$kesto), bins = 20)
+```
+
+
+
+## Most common ICD10 primary and secondary diagnoses 
+
+From care registry
+
+```{r}
+## ICD10 wordcloud 
+# c(pdgo, pdge) # primary ICD-10
+# c(sdg1o, sdg1e, sdg2o, sdg2o) # secondary ICD-10
+# care_reg
+
+care_reg %>% 
+  select(idnum, adm_date, pdgo, pdge, sdg1o, sdg1e, sdg2o, sdg2o) %>% 
+  pivot_longer(cols = c(pdgo, pdge, sdg1o, sdg1e, sdg2o, sdg2o), names_to = "Primary", values_to = "ICD10") -> d1
+
+d1 <- d1 %>%
+  filter(ICD10 != "") %>%  
+  group_by(ICD10) %>% 
+  summarise(n=n())
+
+pal2 <- brewer.pal(8,"Dark2")
+wordcloud(words = d1$ICD10, 
+          freq = d1$n, 
+          scale = c(8, .2),
+          min.freq = 10,
+          colors = pal2)
+```
+
+
+
+
+# Graphs
+
+
+## Care register periods
+
+```{r}
+
+## Hoitojaksot -----
+
+# Join person data to care register data
+d <- left_join(persons, care_reg)
+d1 <- d %>% filter(adm_date >= "1996-01-01")
+# d1[d1$pdgo == "",] # is there empty, YES
+
+d1$length_of_carereg <- d1$disch_date - d1$adm_date
+
+## Mitä hoitojaksoja on henkilöllä 1v diagnoosia ennen? ----
+# hoitojakso alkanut 1v sisällä, primary diagnose ICD-10
+# lenght of care reg 
+
+d2 <- d1 %>% 
+  filter(erko307_pv - adm_date <= 365.25,  
+         erko307_pv - adm_date >=0 )
+d2_agg <- d2 %>% 
+  group_by(pdg) %>% 
+  summarise(n=n(), 
+            ppl=length(unique(idnum)),
+            mean_of_length=mean(length_of_carereg)
+            )
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=ppl, y=n)) +
+  geom_text(aes(x=ppl, y=n, label = pdg))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=ppl, y=n)) +
+  geom_text(aes(x=ppl, y=n, label = pdg, size= as.integer(mean_of_length)))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=ppl, y=n)) +
+  geom_text(aes(x=ppl, y=as.integer(mean_of_length), label = pdg, size=n ), position=position_jitter(width=1,height=1))
+
+
+d2_agg %>% arrange(-ppl, -n, -as.integer(mean_of_length))
+
+
+## Mitä hoitojaksoja henkilöllä on 1-5v ennen diagnoosia? -----
+
+d2 <- d1 %>% 
+  filter(erko307_pv - adm_date <= 365.25*5,  
+         erko307_pv - adm_date >=365.25 )
+d2_agg <- d2 %>% 
+  group_by(pdg) %>% 
+  summarise(n=n(), 
+            ppl=length(unique(idnum)),
+            mean_of_length=mean(length_of_carereg)
+  )
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=ppl, y=n)) +
+  geom_text(aes(x=ppl, y=n, label = pdg))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=ppl, y=n)) +
+  geom_text(aes(x=ppl, y=n, label = pdg, size= as.integer(mean_of_length)))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=ppl, y=n)) +
+  geom_text(aes(x=ppl, y=as.integer(mean_of_length), label = pdg, size=n ), position=position_jitter(width=1,height=1))
+
+
+d2_agg %>% arrange(-ppl, -n, -as.integer(mean_of_length))
+
+
+## Mitä hoitojaksoja henkiölllä on 5+ v ennen diagnoosia?
+
+d2 <- d1 %>% 
+  filter(erko307_pv - adm_date >=365.25*5 )
+d2_agg <- d2 %>% 
+  group_by(pdg) %>% 
+  summarise(n=n(), 
+            ppl=length(unique(idnum)),
+            mean_of_length=mean(length_of_carereg)
+  )
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=ppl, y=n)) +
+  geom_text(aes(x=ppl, y=n, label = pdg))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=ppl, y=n)) +
+  geom_text(aes(x=ppl, y=n, label = pdg, size= as.integer(mean_of_length)))
+
+
+ggplot(d2_agg) +
+  # geom_point(aes(x=ppl, y=n)) +
+  geom_text(aes(x=ppl, y=as.integer(mean_of_length), label = pdg, size=n ), position=position_jitter(width=1,height=1))
+
+
+d2_agg %>% arrange(-ppl, -n, -as.integer(mean_of_length))
+
+```
+
+
