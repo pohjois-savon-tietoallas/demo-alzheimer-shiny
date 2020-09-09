@@ -1,6 +1,6 @@
 # Alzheimer disease patient timeline ShinyApp 
 
-Explore timeline of Alzheimer patients doctoral visits and medicine reimbursement. Timeline is at maximum 15 years before and after the diagnose (day when patient got medicine special reimbursement right, `erko307`). Demo dataset is synthetic and has total number of 13 431 patient. Datasets are not available in GitHub repository.
+Explore timeline of Alzheimer patients doctoral visits and medicine reimbursement. Timeline is at maximum 15 years before and after the diagnose (day when patient got medicine special reimbursement right, `erko307`). Demo dataset is synthetic and has total number of 13 431 patients. Datasets are not available in GitHub repository.
 
 
 ## How to clone and develop application in databricks Rstudio cluster
