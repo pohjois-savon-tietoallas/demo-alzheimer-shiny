@@ -1,0 +1,754 @@
+---
+title: "Alzheimer demo"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(Hmisc)
+library(lubridate) 
+library(wordcloud)
+library(plotly)
+library(survival)
+library(survminer)
+
+# Load datasets
+load(file="./datasets/alzdatasets.RData", verbose=T)
+
+# disable scientific number formatting
+options(scipen=999) 
+```
+
+
+
+
+Patients
+=================
+
+Inputs {.sidebar}
+--------------------------------------------------------
+
+You can subroup the population by age and gender (If population size goes under 10, subset will return whole population).
+
+```{r sidebar}
+h3("Population")
+
+sliderInput(inputId = "ageslider", 
+            label = "Select age group:", 
+            min = min(persons$alz_age_yrs), 
+            max = max(persons$alz_age_yrs), 
+            value = c(min(persons$alz_age_yrs), max(persons$alz_age_yrs)), 
+            dragRange = TRUE)
+radioButtons("gender", 
+             label = "Gender:", 
+             choices = c("All", "Male", "Female"), 
+             selected = "All")
+
+
+h3("Descriptives")
+sliderInput(inputId = "max_diagnoses", 
+            label = "Maximum number of diagnoses", 
+            min = 1, 
+            max = 1000, 
+            value = 200)
+
+sliderInput(inputId = "min_freq", 
+            label = "Minimum freq of diagnose", 
+            min = 1, 
+            max = 1000, 
+            value = 100)
+
+
+
+selectInput(inputId = "atc_level", 
+            label = "ATC level:", 
+            choices = c("atc3", "atc5", "atc"), 
+            selected = "atc3")
+
+sliderInput(inputId = "medicines_gap", 
+            label = "Gap between diagnose and medicine reimbursement", 
+            min = -1000, 
+            max = 1000, 
+            value = c(-365,-1),
+            dragRange = TRUE)
+
+# selectInput("kaplanmeier", 
+#             label = ("Kaplan-Meier:"), 
+#             choices = c("sp", "none"), 
+#             selected = "none")
+
+observeEvent(c(unique(event_data("plotly_click", source = "pop")$x)), {
+  updateSliderInput(session, "ageslider", value = c(unique(event_data("plotly_click", source = "pop")$x), unique(event_data("plotly_click", source = "pop")$x)))
+})
+
+
+
+
+data_pop <- reactive({
+  d1 <- persons %>% 
+    filter(between(alz_age_yrs, input$ageslider[1], input$ageslider[2])) # filter by age
+  # filter by gender
+  if(input$gender != "All"){
+    d1 <- d1 %>%
+      filter(sp == input$gender)
+  }
+  # if n > 9 ok, else send whole pop
+  if(nrow(d1) > 9) {
+    return(d1)
+  }else{
+    return(persons)
+  }
+  
+})
+
+```
+
+<!-- ### Selected -->
+
+
+<!-- # ```{r} -->
+<!-- # renderPrint({ -->
+<!-- #   # plotly plot click event, pop -->
+<!-- #   s <- unique(event_data("plotly_click", source = "pop")$x) -->
+<!-- #   s -->
+<!-- # }) -->
+<!-- #  -->
+<!-- # ``` -->
+
+
+Row
+-----------------------------------------------------------------------
+
+
+### Patients
+
+```{r populationGraphPlotly}
+
+renderPlotly({ 
+      d1 <- data_pop() %>% 
+        group_by(alz_age_yrs, sp) %>% 
+        summarise(n=n())
+      p <- ggplot(d1) +
+        geom_bar(aes(x=alz_age_yrs, y=n, fill=sp), stat="identity") +
+        labs(title = paste0("Population (n=", nrow(data_pop()),")" ), 
+             subtitle = "by gender", caption = "", x="") + 
+        scale_fill_manual(values=c("dodgerblue3", "orchid2"))
+      ggplotly(p, source="pop")
+    })
+```
+
+
+
+
+
+Row 
+-----------------------------------------------------------------------
+
+### Descriptives: care registery diagnoses on whole timeline
+
+```{r}
+# Make the wordcloud drawing predictable during a session
+wordcloud_rep <- repeatable(wordcloud)
+
+renderPlot({ 
+  d1 <- data_pop() %>%
+    right_join(care_reg) %>% 
+    filter(!is.na(alz_age)) %>% 
+    select(idnum, adm_date, pdgo, pdge, sdg1o, sdg1e, sdg2o, sdg2o) %>% 
+    pivot_longer(cols = c(pdgo, pdge, sdg1o, sdg1e, sdg2o, sdg2o), names_to = "Primary", values_to = "ICD10") %>% 
+    filter(ICD10 != "") %>%  
+    group_by(ICD10) %>% 
+    summarise(n=n())
+  
+  pal2 <- brewer.pal(8,"Dark2")
+  wordcloud_rep(words = d1$ICD10, 
+            freq = d1$n, 
+            min.freq = input$min_freq, 
+            max.words = input$max_diagnoses,
+            scale = c(6, .2),
+            # min.freq = 10,
+            colors = pal2)
+    })
+
+```
+
+### Descriptives: medicine imbursements
+
+```{r}
+renderPlotly({
+  
+  ## Medicines atc percentages, before diagnose
+  atc_level <- ifelse(input$atc_level == "atc3", 3, ifelse(input$atc_level == "atc5", 5, 7))
+  
+  drugs %>% 
+    left_join(data_pop()) %>% 
+    filter(!is.na(alz_age)) %>% 
+    mutate(#atc3 = substr(atc, 1,3),
+           #atc5 = substr(atc, 1,5),
+           atc_code = substr(atc, 1, atc_level),
+           gap = otpvm - erko307_pv) %>% 
+    filter(gap >= input$medicines_gap[1], gap <= input$medicines_gap[2]) %>% 
+    select(idnum, atc_code) %>% 
+    group_by(atc_code) %>% 
+    summarise(n=n(),
+              uniq=length(unique(idnum)),
+              time="before") %>% 
+    mutate(
+      percentage = 100 * uniq / nrow(data_pop())
+    ) %>% 
+    select(atc_code, time, percentage) -> d1
+  
+  ggplot(data = d1) +
+    geom_bar(aes(x=atc_code, y=percentage, fill=atc_code), stat="identity") +
+    coord_flip() + 
+    scale_y_continuous(limits = c(0,100), breaks = c(0,25,50,75,100)) +
+    labs(title=paste0("Medicine usage between ",input$medicines_gap[1], " and ", input$medicines_gap[2], " days before diagnose"), x= "ATC code", y="% of patients")
+  
+})
+
+```
+
+Timeline
+===================
+
+
+Inputs {.sidebar}
+--------------------------------------------------------
+
+You can select from the timeline graph a bar according to certain year, which will show most common diagnoses on graph below. Select does not affect on mortality or survival analysis graphs.
+
+
+```{r}
+h3("Timeline")
+
+radioButtons(inputId = "tl_var",
+             label = "y-axis:",
+             choices = c("patients"),
+             selected = "patients"
+             )
+
+h3("Diagnoses")
+
+radioButtons(inputId = "tl_diagnose_x",
+             label = "x-axis:",
+             choices = c("patients", "patients_percentage", "days"),
+             selected = "patients"
+             )
+
+radioButtons(inputId = "tl_diagnose_y",
+             label = "y-axis:",
+             choices = c("patients", "patients_percentage", "days"),
+             selected = "days"
+             )
+
+# radioButtons(inputId = "tl_seq", 
+#              label = "Time variable:", 
+#              choices = c("Year", "Month"), 
+#              selected = "Year"
+#              )
+# checkboxGroupInput(inputId = "tl_cases",  
+#               label = "Cases:", 
+#               choiceNames = c("Visits", "Hospitilizations", "Censoring", "Died") # , 
+#               # selected = c("Visits", "Hospitilizations", "Censoring", "Died")
+#               )
+# sliderInput(inputId = "tl_care_length", 
+#             label = "Hospitilization duration", 
+#             min = 1, 
+#             max = 3500, 
+#             value =c(0,3500),
+#             dragRange = T
+#             )
+```
+
+
+```{r create_timeline_data}
+tl <- reactive({
+  tl <- timeline_init %>% 
+    filter(idnum %in% data_pop()$idnum)
+  tl_year <- NULL
+  for(i in seq(from = -15, to = 15, by = 1) ){
+    if(is.null(tl_year)){
+      tl_year <- tl %>% 
+        filter( year_start <= i & year_end > i ) %>% # HUOM. tasaus tässä!
+        group_by(idnum) %>% ##
+        filter(source_int == max(source_int)) %>%  ###
+        ungroup() %>% 
+        group_by(source) %>% 
+        summarise(.groups = 'drop',
+                  time=i,
+                  n=n(),
+                  patients = length(unique(idnum)) #,
+                  # ids=list(unique(idnum))
+        )
+    }else{
+      tl_year <- tl_year %>% 
+        rbind(
+          tl %>% 
+            filter( year_start <= i & year_end > i ) %>% # HUOM. tasaus tässä!
+            group_by(idnum) %>% ##
+            filter(source_int == max(source_int)) %>%  ###
+            ungroup() %>% 
+            group_by(source) %>% 
+            summarise(.groups = 'drop',
+                      time=i,
+                      n=n(),
+                      patients = length(unique(idnum)) #,
+                      # ids=list(unique(idnum))
+            )
+        )
+    }
+  }
+  
+  return(tl_year)
+})
+
+tl_diagnoses <- reactive({
+  tl_diags <- NULL
+  tl_data <- timeline_init %>% 
+    filter(idnum %in% data_pop()$idnum)
+  for(i in seq(-15, 15, by = 1)){
+    if(is.null(tl_diags)){
+      tl_diags <- tl_data %>% 
+        filter(source_int == 3 & year_start <= i & year_end > i ) %>% # HUOM. rajaus klikin mukaan
+        group_by(pdgo) %>% 
+        summarise(
+          .groups = 'drop',
+          year = i,
+          cases = n(),
+          patients = length(unique(idnum)),
+          days = sum(time_length(lhjlakpv+1 - lhjalkpv, "days"))
+        ) %>% 
+        mutate(
+          patients_percentage = 100 * patients / nrow(data_pop())
+        )  
+    }else{
+      tl_diags <- tl_diags %>% 
+        rbind(
+          tl_data %>% 
+            filter(source_int == 3 & year_start <= i & year_end > i ) %>% # HUOM. rajaus klikin mukaan
+            group_by(pdgo) %>% 
+            summarise(
+              .groups = 'drop',
+              year = i,
+              cases = n(),
+              patients = length(unique(idnum)),
+              days = sum(time_length(lhjlakpv+1 - lhjalkpv, "days"))
+            ) %>% 
+            mutate(
+              patients_percentage = 100 * patients / nrow(data_pop())
+            )
+      )
+    }
+  }
+  return(tl_diags)
+})
+
+```
+
+
+
+
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+### Timeline
+
+```{r plotly_timeline}
+renderPlotly({
+    p <- ggplot(data=tl()) +
+      geom_bar(aes(x=time, 
+                   y=get(input$tl_var), 
+                   group=source, 
+                   fill=source), 
+               stat="identity") +
+      labs(title = "Timeline of persons in hospitalizations. (Click the bar to get more detailed information of diagnoses)",
+           x="Year according to diagnose date", 
+           y=input$tl_var
+  )
+  
+  ggplotly(p, source="timeline_graph")
+  
+})
+```
+
+
+```{r}
+# output$timelineTable <- DT::renderDataTable({
+#   DT::datatable(tl(), rownames = FALSE)
+#   })
+# DT::dataTableOutput("timelineTable")
+```
+
+
+### Mortality
+
+```{r}
+renderPlotly({
+  
+  d1 <- data_pop() %>% 
+    mutate(died_after_diag = kuolpv - erko307_pv,
+           died_after_diag_cat = cut(as.integer(died_after_diag),
+                                     breaks=c(-Inf, 180, 365, 730, 1095, Inf),
+                                     labels = c("< half year", "0.5 - 1 year", "1-2 years", "2-3 years", "3+ years")
+                                     )
+           ) %>% 
+    filter(!is.na(died_after_diag_cat)) %>% 
+    group_by(died_after_diag_cat, sp) %>% 
+    summarise(n=n())
+
+  # mortality after diagnose
+  ggplot(d1) +
+    geom_bar(stat = "identity", aes(x=died_after_diag_cat, y=n, fill=sp)) + 
+    coord_flip() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    labs(title = "Mortality, days after the diagnose", x= "", y="") +
+    scale_fill_manual(values=c("dodgerblue3", "orchid2"))
+})
+```
+
+### Survival analysis (Kaplan-Meier)
+
+```{r}
+
+surv_object <- reactive({
+  d <- data_pop()
+  surv_object <- survival::Surv(time = d$survived, event = d$event)
+  return(surv_object)
+})
+ 
+renderPlot({
+  # predictors <- input$kaplanmeier
+  fit1 <- survfit(surv_object() ~ 1, data = data_pop())
+  # if(predictors == "sp") fit1 <- survfit(surv_object() ~ sp, data = data_pop())
+  # summary(fit1)
+  ggsurvplot(fit1, data = data_pop(), pval = TRUE)
+})
+```
+
+
+
+
+
+
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+### Most common diagnoses
+
+```{r}
+renderPlotly({
+  ## Get click from timeline_graph
+  s <- unique(event_data("plotly_click", source = "timeline_graph")$x)
+  if(is.null(s)){
+    s <- 0
+    # title <- paste0("Most common diagnoses in whole timeline")
+  }
+  title <- paste0("Most common diagnoses in year ", s)
+  
+  ## xvar
+  # if(input$tl_diagnose_x ==)
+
+  ## Plot diagnoses scatter plot
+  p <- ggplot(data=tl_diagnoses()[tl_diagnoses()$year %in% s, ]) +
+    # geom_point(aes(x=patients, y=days, group=pdgo)) +
+    geom_text(aes(x = get(input$tl_diagnose_x), 
+                  y = get(input$tl_diagnose_y), 
+                  group=pdgo, 
+                  label = pdgo)) +
+    labs(title = title, x = input$tl_diagnose_x, y = input$tl_diagnose_y)
+  
+  ## output
+  p
+})
+```
+
+
+
+### Table
+
+```{r}
+# renderPrint({
+#  # plotly plot click event, pop
+#  s <- unique(event_data("plotly_click", source = "timeline_graph")$x)
+#  if(is.null(s)) s <- seq(-15,15,1)
+#  s
+# })
+
+output$tl_dg_table <- DT::renderDataTable({
+  ## Get click from timeline_graph
+  s <- unique(event_data("plotly_click", source = "timeline_graph")$x)
+  if(is.null(s)){
+    s <- 0
+    # title <- paste0("Most common diagnoses in whole timeline")
+  }
+  
+  DT::datatable(tl_diagnoses()[tl_diagnoses()$year %in% s, ], 
+                selection = list(
+                  target = "row",
+                  selected = c(1)),
+                rownames = FALSE, 
+                # colnames = c('Code range', 'Label'),
+                options = 
+                  list(pageLength = 5)
+                )
+  })
+DT::dataTableOutput("tl_dg_table")
+
+```
+
+
+
+Diagnoses
+==================
+
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+
+
+**Diagnoses from care registry.** Cumulative number of cases. Same ICD-10 diagnose is counted only once by person. Diagnoses allocated to main (pdgo, pdge) and side diagnoses (sdg1o, sdg1e, sdg2o, sdg2o). You can select from the table below diagnoses to the graph.
+
+
+```{r}
+main_diagnoses <- reactive({
+   # level out pdgo and pdge
+  care_reg %>% 
+    left_join(data_pop()) %>% 
+    filter(!is.na(alz_age)) %>% 
+    select(idnum, erko307_pv, adm_date, pdgo, pdge) %>%
+    filter(pdgo != "") %>%
+    pivot_longer(cols = c(pdgo, pdge), names_to = "diag_order", values_to = "ICD10") %>% 
+    filter(ICD10 != "") %>% 
+    mutate(date_mm = format(adm_date, "%Y-%m"),
+           days_before =  adm_date - erko307_pv,
+           icd=substr(ICD10, 1, 3) #this filters
+    ) %>% 
+    # filter( icd %in% unlist(icd10$classes[icd10$CodeRange %in% input$diagnoses])) %>%  #this filters
+    group_by(idnum, ICD10) %>% 
+    filter(adm_date == min(adm_date)) %>% 
+    slice(1) %>% 
+    ungroup() %>%
+    arrange(ICD10, days_before) %>% 
+    group_by(ICD10, days_before) %>% 
+    summarise(n = n()) %>% 
+    arrange(ICD10, days_before) %>% 
+    mutate(
+      cases = cumsum(n),
+      diag_aggregated = substr(ICD10, 1, 3)
+    ) %>% 
+    rename(
+      diag=ICD10
+    ) -> d1
+  
+  return(d1)
+})
+
+
+side_diagnoses <- reactive({
+   # level out pdgo and pdge
+  care_reg %>%
+    left_join(data_pop()) %>% 
+    filter(!is.na(alz_age)) %>% 
+    select(idnum, erko307_pv, adm_date, sdg1o, sdg1e, sdg2o, sdg2o) %>%
+    filter(sdg1o != "") %>%
+    pivot_longer(cols = c(sdg1o, sdg1e, sdg2o, sdg2o), names_to = "diag_order", values_to = "ICD10") %>%
+    filter(ICD10 != "") %>%
+    mutate(date_mm = format(adm_date, "%Y-%m"),
+           days_before =  adm_date - erko307_pv,
+          icd=substr(ICD10, 1, 3) #this filters
+    ) %>% 
+    # filter( icd %in% unlist(icd10$classes[icd10$CodeRange %in% input$diagnoses])) %>%  #this filters
+    group_by(idnum, ICD10) %>%
+    filter(adm_date == min(adm_date)) %>%
+    slice(1) %>%
+    ungroup() %>%
+    arrange(ICD10, days_before) %>%
+    group_by(ICD10, days_before) %>%
+    summarise(n = n()) %>%
+    arrange(ICD10, days_before) %>%
+    mutate(
+      cases = cumsum(n)
+    ) %>%
+    rename(
+      diag=ICD10
+    )
+})
+
+```
+
+
+
+### Main diagnoses
+
+
+```{r}
+renderPlot({
+  dplot <- main_diagnoses() 
+  
+  s <- input$diagnose_table_rows_selected
+  classes <- as.character(unlist(icd10$classes[s]))
+  if(!is.null(classes)){
+    dplot <- dplot %>% 
+      filter(substr(diag, 1, 3) %in% classes)
+  }
+  
+  # Plot main diagnoses
+  ggplot(dplot, aes(x = days_before, y = cases, group=diag)) +
+    geom_line() +
+    # scale_x_continuous() +
+    geom_text(data = dplot %>% filter(days_before == last(days_before)), aes(label = diag, 
+                                                                         x = days_before -300, 
+                                                                         y = cases)) + 
+    guides(color = FALSE) + 
+    labs(title="ICD-10 main diagnoses") +
+    geom_vline(xintercept=2, color="#667F66")
+})
+ 
+
+
+```
+
+
+### Secondary diagnoses
+
+```{r}
+
+renderPlot({
+  dplot <- side_diagnoses() 
+  
+  s <- input$diagnose_table_rows_selected
+  classes <- as.character(unlist(icd10$classes[s]))
+  if(!is.null(classes)){
+    dplot <- dplot %>% 
+      filter(substr(diag, 1, 3) %in% classes)
+  }
+  
+  # Plot side diagnoses
+  ggplot(dplot, aes(x = days_before, y = cases, group=diag)) +
+    geom_line() +
+    # scale_x_continuous() +
+    geom_text(data = dplot %>% filter(days_before == last(days_before)), aes(label = diag,
+                                                                         x = days_before -300,
+                                                                         y = cases)) +
+    guides(color = FALSE) +
+    labs(title="ICD-10 secondary diagnoses") +
+    geom_vline(xintercept=2, color="#667F66")
+})
+
+```
+
+
+Row 
+-----------------------------------------------------------------------
+
+```{r}
+output$diagnose_table <- DT::renderDataTable({
+  DT::datatable(icd10[, c("CodeRange", "Description")] , 
+                selection = list(
+                  target = "row",
+                  selected = c(1)),
+                rownames = FALSE, 
+                colnames = c('Code range', 'Label'),
+                options = 
+                  list(pageLength = 21)
+                )
+  })
+DT::dataTableOutput("diagnose_table")
+```
+
+
+
+Medicines 
+==================
+
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+**Medicine reimbursements from Kela registry.** Cumulative number of cases. Only reimbursement action are counted, not how many packages patience bought. You can select from the table below medicines to the graph.
+
+```{r}
+drugs_data <- reactive({
+   drugs %>% 
+    left_join(data_pop()) %>% 
+    filter(!is.na(alz_age)) %>% 
+    mutate(days_before = otpvm - erko307_pv,
+           atc3=substr(atc,1,3)
+    ) -> drugs_days_before
+  
+  drugs_days_before %>%
+    arrange(atc, days_before) %>% 
+    group_by(atc, days_before) %>% 
+    summarise(n = n()) %>% 
+    arrange(atc, days_before) %>% 
+    mutate(
+      cases = cumsum(n),
+      atc3 = substr(atc, 1,3)
+    )-> d1
+  
+  return(d1)
+})
+
+
+renderPlot({
+  
+  s <- input$atc_table_rows_selected
+  codes <- as.character(unlist(atc_codes$atc[s]))
+  
+  plot_data <- drugs_data() 
+  if(!is.null(codes)){
+    plot_data <- plot_data %>% filter(atc3 %in% codes)
+  }
+
+  ggplot(plot_data, aes(x=days_before, y=cases, group=atc, color=atc3)) +
+    geom_line() +
+    # scale_x_continuous(trans = "reverse") +
+    geom_text(data = plot_data %>% filter(days_before == last(days_before)),
+              aes(label = atc, x = days_before -300, y = cases)) +
+    guides(color = FALSE) +
+    labs(title="cases") +
+    geom_vline(xintercept=2, color="#667F66")
+})
+
+```
+
+
+Row
+----------------------------------
+
+```{r}
+output$atc_table <- DT::renderDataTable({
+  DT::datatable(atc_codes, 
+                selection = list(
+                  target = "row",
+                  selected = c(1,2,3,4,5,6,7)),
+                rownames = FALSE, 
+                # colnames = c('Code range', 'Label'),
+                options = 
+                  list(pageLength = 7)
+                )
+  })
+DT::dataTableOutput("atc_table")
+
+```
+
+
+
+About
+===================
+
+**Licence:** [CC BY](https://creativecommons.org/licenses/by/4.0/). This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, so long as attribution is given to the creator. The license allows for commercial use.
+</br>
+**Datasets** are synthetic, but represent real world data. Original datasets are not available for users freely. If you are interested of the datasets, please contact [Reijo Sund](mailto://reijo.sund@uef.fi).
+</br>
+Copyright (c) 2020 Jani Miettinen </br>
+</br>
+<https://github.com/pohjois-savon-tietoallas/alzdemo/>
