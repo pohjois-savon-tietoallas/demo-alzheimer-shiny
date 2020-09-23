@@ -1,5 +1,3 @@
-# run.R
-
 # Run these chunks in databricks RStudio cluster when you first clone and start the project. It will install packages, modify the dataset, add git credentials and run the program. All chunk are preset to FALSE, so check chunks before running them. 
 
 ## Clean environment setup ----
@@ -23,12 +21,7 @@ if(FALSE){
   
   ## create datasets in /datasets/ folder
   source("create_datasets.R")
-  
-  ## set git credentials
-  if(Sys.info()[["user"]] == "janimi@istekkiasiakas.fi") {
-    system('git config --global user.email "jani.miettinen@uef.fi"')
-    system('git config --global user.name "Jani Miettinen"')
-  }
+
 }
 
 ## Render documents ----

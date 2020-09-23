@@ -1,4 +1,5 @@
-# Create datasets for ShinyApp
+# CREATE DATASET FOR SHINYAPP
+# MASTER DATASET norpen.RData IS NEEDED FOR CREATING APPLICATION DATASET. 
 
 library(tidyverse)
 library(lubridate)

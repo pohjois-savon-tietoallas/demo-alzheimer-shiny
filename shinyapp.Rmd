@@ -33,7 +33,7 @@ Patients
 Inputs {.sidebar}
 --------------------------------------------------------
 
-You can subroup the population by age and gender (If population size goes under 10, subset will return whole population).
+You can subgroup the population by age and gender (If population size goes under 10, subset will return the whole population).
 
 ```{r sidebar}
 h3("Population")
@@ -658,7 +658,7 @@ output$diagnose_table <- DT::renderDataTable({
                 rownames = FALSE, 
                 colnames = c('Code range', 'Label'),
                 options = 
-                  list(pageLength = 21)
+                  list(pageLength = 10)
                 )
   })
 DT::dataTableOutput("diagnose_table")
@@ -745,10 +745,13 @@ DT::dataTableOutput("atc_table")
 About
 ===================
 
-**Licence:** [CC BY](https://creativecommons.org/licenses/by/4.0/). This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, so long as attribution is given to the creator. The license allows for commercial use.
+Found a bug? If you know github, you can open an [issue](https://github.com/pohjois-savon-tietoallas/demo-alzheimer-shiny/issues). Otherwise contact the [creators](mailto:jani.miettinen@uef.fi?subject=I found a bug in Alzdemo).
 </br>
-**Datasets** are synthetic, but represent real world data. Original datasets are not available for users freely. If you are interested of the datasets, please contact [Reijo Sund](mailto://reijo.sund@uef.fi).
+**Datasets** are synthetic, but represent real world data. Original datasets are not available for users freely. If you are interested of the datasets, please contact [Reijo Sund](mailto:reijo.sund@uef.fi?subject=About alzdemo datasets).
+</br>
+**Source code:** <https://github.com/pohjois-savon-tietoallas/demo-alzheimer-shiny>
+</br>
+**Licence:** [CC BY](https://creativecommons.org/licenses/by/4.0/). This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, so long as attribution is given to the creator. The license allows for commercial use.
 </br>
 Copyright (c) 2020 Jani Miettinen </br>
 </br>
-<https://github.com/pohjois-savon-tietoallas/alzdemo/>

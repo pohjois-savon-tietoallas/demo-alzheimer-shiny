@@ -2,8 +2,12 @@
 
 Explore timeline of Alzheimer patients doctoral visits and medicine reimbursement. Timeline is at maximum 15 years before and after the diagnose (day when patient got medicine special reimbursement right, `erko307`). Demo dataset is synthetic and has total number of 13 431 patients. Datasets are not available in GitHub repository.
 
+Application available at <http://bioinformatics.uef.fi/alzdemo/>
+
 
 ## How to clone and develop application in databricks Rstudio cluster
+
+*This project is developed in KUH datalake environment by running RStudio in a cluster.*
 
 1. Launch RStudio Cluster in databricks and login. Check guide how to install RStudio in databricks cluster [here](https://docs.databricks.com/spark/latest/sparkr/rstudio.html).
 
@@ -20,8 +24,9 @@ to generate ssh-keyfile and copy ssh-key file to Github keys <https://github.com
 3. Clone project to databricks Rstudio cluster
 
 ```
-git clone git@github.com:pohjois-savon-tietoallas/alzdemo.git
-$git clone https://github.com/pohjois-savon-tietoallas/alzdemo.git # without ssh
+
+git clone git@github.com:pohjois-savon-tietoallas/demo-alzheimer-shiny.git
+$git clone git@github.com:pohjois-savon-tietoallas/demo-alzheimer-shiny.git # without ssh
 ```
 
 4. Setup git user credentials
@@ -31,7 +36,9 @@ git config --global user.email "user.name@mail.fi"
 git config --global user.name "User Name"
 ```
 
-5. Open project and run `shinyapp.Rmd` (alt + shift + K) 
+5. Open project, use script `development_init.R` for initilizing R environment. 
+
+6. Run `shinyapp.Rmd` (alt + shift + K) 
 
 ![](img/shinyapp.png)
 

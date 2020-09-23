@@ -12,33 +12,10 @@ output:
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-Target of this demo project is to identify factors/variables associate with Alzheimer disease in KUH data lake demo dataset. Also interest is to find out if there is predictive power in these factors/variables to identify upcoming Alzheimer disease diagnose. Project is available in Gitlab <https://github.com/pohjois-savon-tietoallas/alzdemo>, ask permission to project from [jani.miettinen'at'uef.fi](mailto://jani.miettinen@uef.fi).
-
-
-**First step: Explorative data analysis and dataset visualizations**
-
-- General descriptitives of the datasets
-- In what age Alzheimer disease is diagnosed?
-- What treatments and diagnoses persons have before Alzheimer disease diagnose?
-- What medicine impursement persons have before Alzheimer disease diagnose?
-- How many days instutionalized 1 year, 2-5 years before diagnose?
-
-
-**Second step: Identify vars/factors correlating with Alzheimer disease diagnose**
-
-- How data can be classified to different risk groups
-- Statistical methods for classifying subjects, indexing, trend meter, correlations, ...
-
-
-**Third step: Build a model**
-
-- Collect variables associated with Alz-diagnose
-- Test model predictive power
-
+Alzheimer dataset descriptives. Target of this demo project is to identify factors/variables associate with Alzheimer disease in KUH data lake demo dataset. Also interest is to find out if there is predictive power in these factors/variables to identify upcoming Alzheimer disease diagnose. Project is available in Gitlab <https://github.com/pohjois-savon-tietoallas/demo-alzheimer-shiny>.
 
 
 # Datasets
-
  
 ```{r}
 library(tidyverse)
@@ -310,21 +287,6 @@ ggplot(d1) +
   coord_flip() +
   labs(title = "ATC N05 medicine reimbursements")
 ```
-
-### 1 year before
-
-```{r}
-```
-
-
-
-
-### 2-5 years before
-
-```{r}
-
-```
-
 
 
 
