@@ -4,6 +4,8 @@ Explore timeline of Alzheimer patients doctoral visits and medicine reimbursemen
 
 Application available at <http://bioinformatics.uef.fi/alzdemo/>
 
+![](img/shinyapp.png)
+
 
 ## How to clone and develop application in databricks Rstudio cluster
 
@@ -39,8 +41,6 @@ git config --global user.name "User Name"
 5. Open project, use script `development_init.R` for initilizing R environment. 
 
 6. Run `shinyapp.Rmd` (alt + shift + K) 
-
-![](img/shinyapp.png)
 
 
 ## Acknowledgements
