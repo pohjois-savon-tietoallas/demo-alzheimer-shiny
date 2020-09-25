@@ -51,19 +51,12 @@ radioButtons("gender",
 
 
 h3("Descriptives")
-sliderInput(inputId = "max_diagnoses", 
-            label = "Maximum number of diagnoses", 
-            min = 1, 
-            max = 1000, 
-            value = 200)
 
 sliderInput(inputId = "min_freq", 
-            label = "Minimum freq of diagnose", 
-            min = 1, 
-            max = 1000, 
+            label = "Minimum number of diagnoses", 
+            min = 20, 
+            max = 5000, 
             value = 100)
-
-
 
 selectInput(inputId = "atc_level", 
             label = "ATC level:", 
@@ -77,17 +70,9 @@ sliderInput(inputId = "medicines_gap",
             value = c(-365,-1),
             dragRange = TRUE)
 
-# selectInput("kaplanmeier", 
-#             label = ("Kaplan-Meier:"), 
-#             choices = c("sp", "none"), 
-#             selected = "none")
-
 observeEvent(c(unique(event_data("plotly_click", source = "pop")$x)), {
   updateSliderInput(session, "ageslider", value = c(unique(event_data("plotly_click", source = "pop")$x), unique(event_data("plotly_click", source = "pop")$x)))
 })
-
-
-
 
 data_pop <- reactive({
   d1 <- persons %>% 
@@ -163,17 +148,22 @@ renderPlot({
     pivot_longer(cols = c(pdgo, pdge, sdg1o, sdg1e, sdg2o, sdg2o), names_to = "Primary", values_to = "ICD10") %>% 
     filter(ICD10 != "") %>%  
     group_by(ICD10) %>% 
-    summarise(n=n())
+    summarise(n=n()) %>% 
+    mutate(
+      group = substr(ICD10, 1, 1)
+    ) %>% 
+    filter(n > input$min_freq)
   
-  pal2 <- brewer.pal(8,"Dark2")
+  # palette
+  basecolors <- colorRampPalette(brewer.pal(9, "Set1"))(20)
+  colorlist <- basecolors[match(d1$group, unique(d1$group))]
+  
   wordcloud_rep(words = d1$ICD10, 
-            freq = d1$n, 
-            min.freq = input$min_freq, 
-            max.words = input$max_diagnoses,
-            scale = c(6, .2),
-            # min.freq = 10,
-            colors = pal2)
-    })
+                freq = d1$n, 
+                scale = c(6, .2),
+                colors = as.character(colorlist),
+                ordered.colors=TRUE)
+})
 
 ```
 
