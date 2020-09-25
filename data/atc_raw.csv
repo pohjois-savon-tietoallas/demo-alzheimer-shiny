@@ -1,0 +1,342 @@
+atc; label
+N02;Analgesics
+N02A;Opioids
+N02AB;Phenylpiperidine derivatives
+N02AB03;fentanyl
+N02AC;Diphenylpropylamine derivatives
+N02AC54;dextropropoxyphene, combinations excluding psycholept
+N02AX;Other opioids
+N02AX02;etenzamide, combinations with psycholeptics
+N02B;Other analgesics and antipyretics
+N02BG;Other analgesics and antipyretics
+N02BG07;flupirtine
+N02BG08;entacapone
+N02C;Antimigraine preparations
+N02CD;Calcitonin gene-related peptide (CGRP) antagonists
+N02CD02;galcanezumab
+N02CX;Other antimigraine preparations
+N02CX04;sumatriptan
+N05;Psycholeptics
+N05A;Antipsychotics
+N05AD;Butyrophenone derivatives
+N05AD01;haloperidol
+N05AE;Indole derivatives
+N05AE03;sertindole
+N05AE05;lurasidone
+N05AH;Diazepines, oxazepines, thiazepines and oxepines
+N05AH01;loxapine
+N05AH02;clozapine
+N05AH03;olanzapine
+N05AH04;quetiapine
+N05AH05;asenapine
+N05AL;Benzamides
+N05AL06;veralipride
+N05AX;Other antipsychotics
+N05AX08;risperidone
+N05AX12;aripiprazole
+N05AX13;paliperidone
+N05AX14;iloperidone
+N05AX15;cariprazine
+N05AX16;brexpiprazole
+N05C;Hypnotics and sedatives
+N05CD;Benzodiazepine derivatives
+N05CD08;midazolam
+N05CF;Cyclopyrrolones
+N05CF03;zaleplon
+N05CF04;eszopiclone
+N05CH;Melatonin receptor agonists
+N05CH01;melatonin
+N05CH03;tasimelteon
+N05CM;Other hypnotics and sedatives
+N05CM18;dexmedetomidine
+N06;Psychoanaleptics
+N06A;Antidepressants
+N06AB;Bicyclic derivatives
+N06AB03;fluoxetine
+N06AB04;citalopram
+N06AB05;paroxetine
+N06AB06;sertraline
+N06AB08;fluvoxamine
+N06AB10;escitalopram
+N06AX;Other antidepressants
+N06AX11;mirtazapine
+N06AX12;bupropion
+N06AX16;venlafaxine
+N06AX17;milnacipran
+N06AX18;reboxetine
+N06AX21;duloxetine
+N06AX22;agomelatine
+N06AX26;vortioxetine
+N06AX27;esketamine
+N06B;Psychostimulants, agents used for ADHD and nootropics
+N06BA;Centrally acting sympathomimetics
+N06BA04;methylphenidate
+N06BA07;modafinil
+N06BA09;atomoxetine
+N06BA14;solriamfetol
+N06BC;Xanthine derivatives
+N06BC01;caffeine
+N06BC02;propentofylline
+N06BX;Other psychostimulants
+N06BX13;idebenone
+N06D;Anti-dementia drugs
+N06DA;Anticholinesterases
+N06DA03;rivastigmine
+N06DA04;galantamine
+N06DA52;donepezil and memantine
+N06DX;Other anti-dementia drugs
+N06DX01;memantine
+L01;Antineoplastic agents
+L01A;Alkylating agents
+L01AA;Nitrogen mustard analogues
+L01AA03;acetarsol
+L01AA05;clioquinol
+L01AB;Alkyl sulphonates
+L01AB01;busulfan
+L01AB02;treosulfan
+L01AC;Ethylene imines
+L01AC01;thiotepa
+L01AD;Nitrosoureas
+L01AD01;carmustine
+L01AX;Other alkylating agents
+L01AX03;temozolomide
+L01AX04;dacarbazine
+L01B;Antimetabolites
+L01BA;Folic acid analogues
+L01BA01;methotrexate
+L01BA04;anagrelide
+L01BA05;pralatrexate
+L01BB;Purine analogues
+L01BB02;mercaptopurine
+L01BB04;cladribine
+L01BB06;clofarabine
+L01BB07;nelarabine
+L01BC;Pyrimidine analogues
+L01BC01;cytarabine
+L01BC05;gemcitabine
+L01BC06;capecitabine
+L01BC07;azacitidine
+L01BC08;decitabine
+L01BC53;tegafur, combinations
+L01BC59;trifluridine, combinations
+L01C;Plant alkaloids and other natural products
+L01CA;Vinca alkaloids and analogues
+L01CA05;vinflunine
+L01CA06;vintafolide
+L01CB;Podophyllotoxin derivatives
+L01CB01;etoposide
+L01CD;Taxanes
+L01CD01;paclitaxel
+L01CD02;docetaxel
+L01CD04;cabazitaxel
+L01CX;Other plant alkaloids and natural products
+L01CX01;trabectedin
+L01D;Cytotoxic antibiotics
+L01DB;Anthracyclines
+L01DB01;doxorubicin
+L01DB11;pixantrone
+L01X;Other antineoplastic agents
+L01XC;Monoclonal antibodies
+L01XC02;rituximab
+L01XC03;trastuzumab
+L01XC04;alemtuzumab
+L01XC05;gemtuzumab
+L01XC06;cetuximab
+L01XC07;bevacizumab
+L01XC08;panitumumab
+L01XC09;catumaxomab
+L01XC10;ofatumumab
+L01XC11;ipilimumab
+L01XC12;brentuximab vedotin
+L01XC13;pertuzumab
+L01XC14;trastuzumab emtansine
+L01XC15;trametinib
+L01XC16;dinutuximab
+L01XC17;fluciclovine (18F)
+L01XC18;pembrolizumab
+L01XC19;blinatumomab
+L01XC21;ramucirumab
+L01XC22;moxidectin
+L01XC23;elotuzumab
+L01XC24;cariprazine
+L01XC25;mogamulizumab
+L01XC26;inotuzumab ozogamicin
+L01XC27;olaratumab
+L01XC31;avelumab
+L01XC32;atezolizumab
+L01XD;Sensitizers used in photodynamic/radiation therapy
+L01XD01;porfimer sodium
+L01XD04;aminolevulinic acid
+L01XD05;temoporfin
+L01XD07;padeliporfin
+L01XE;Protein kinase inhibitors
+L01XE01;pivagabine
+L01XE02;gefitinib
+L01XE03;beclometasone
+L01XE04;sunitinib
+L01XE05;sorafenib
+L01XE06;dasatinib
+L01XE07;lapatinib
+L01XE08;nilotinib
+L01XE09;temsirolimus
+L01XE10;everolimus
+L01XE11;pazopanib
+L01XE12;vandetanib
+L01XE13;afatinib
+L01XE14;bosutinib
+L01XE15;vemurafenib
+L01XE16;crizotinib
+L01XE17;axitinib
+L01XE18;ruxolitinib
+L01XE21;regorafenib
+L01XE22;masitinib
+L01XE23;dabrafenib
+L01XE24;ponatinib
+L01XE25;trametinib
+L01XE26;dihydrostreptomycin
+L01XE27;ibrutinib
+L01XE28;ceritinib
+L01XE29;rolapitant
+L01XE31;nintedanib
+L01XE33;palbociclib
+L01XE34;tivozanib
+L01XE35;osimertinib
+L01XE36;alectinib
+L01XE38;cobimetinib
+L01XE39;midostaurin
+L01XE41;binimetinib
+L01XE42;ribociclib
+Kisqali (active)
+L01XE43;brigatinib
+L01XE44;lorlatinib
+L01XE45;neratinib
+L01XE46;encorafenib
+L01XE47;dacomitinib
+L01XE50;abemaciclib
+L01XE53;larotrectinib
+L01XX;Other antineoplastic agents
+L01XX02;asparaginase
+L01XX05;hydroxycarbamide
+L01XX17;topotecan
+L01XX19;irinotecan
+L01XX22;reboxetine
+L01XX23;mitotane
+L01XX24;pegaspargase
+L01XX25;bexarotene
+L01XX27;desvenlafaxine
+L01XX32;bortezomib
+L01XX33;celecoxib
+L01XX35;anagrelide
+L01XX39;romidepsin
+L01XX41;eribulin
+L01XX42;panobinostat
+L01XX43;vismodegib
+L01XX44;aflibercept
+L01XX45;carfilzomib
+L01XX46;olaparib
+L01XX47;idelalisib
+L01XX48;sonidegib
+L01XX50;ixazomib
+L01XX51;talimogene laherparepvec
+L01XX52;venetoclax
+L01XX54;niraparib
+L01XX55;rucaparib
+L01XX56;etirinotecan pegol
+L01XX57;plitidepsin
+L01XX60;talazoparib
+L01XY;Combinations of cytostatics
+L01XY01;cytarabine and daunorubicin
+L02;Endocrine therapy
+L02A;Hormones and related agents
+L02AE;Gonadotrophin releasing hormone analogues
+L02AE03;goserelin
+L02B;Hormone antagonists and related agents
+L02BA;Anti-estrogens
+L02BA02;toremifene
+L02BA03;fulvestrant
+L02BB;Anti-androgens
+L02BB03;bicalutamide
+L02BB04;enzalutamide
+L02BB05;apalutamide
+L02BG;Enzyme inhibitors
+L02BG03;anastrozole
+L02BG04;letrozole
+L02BX;Other hormone antagonists and related agents
+L02BX02;degarelix
+L02BX03;abiraterone
+L03;Immunomodulating agents
+L03A;Immunostimulating agents
+L03AA;Cytokines
+L03AA02;filgrastim
+L03AA03;molgramostim
+L03AA13;pegfilgrastim
+L03AA14;lipegfilgrastim
+L03AA15;balugrastim
+L03AB;Interferons
+L03AB01;levacetylmethadol
+L03AB05;interferon gamma
+L03AB07;interferon alfa-2b
+L03AB08;interferon alfa-n1
+L03AB09;interferon beta-1a
+L03AB10;peginterferon alfa-2b
+L03AB11;peginterferon alfa-2a
+L03AB13;peginterferon beta-1a
+L03AB15;ropeginterferon alfa-2b
+L03AX;Other immunostimulating agents
+L03AX11;tasonermin
+L03AX14;histamine dihydrochloride
+L03AX15;mifamurtide
+L03AX16;plerixafor
+L03AX17;sipuleucel-T
+L03AX19;dasiprotimut-T
+L04;Immunosuppressants
+L04A;Immunosuppressants
+L04AA;Selective immunosuppressants
+L04AA02;muromonab-CD3
+L04AA06;mycophenolic acid
+L04AA10;sirolimus
+L04AA13;leflunomide
+L04AA21;efalizumab
+L04AA23;natalizumab
+L04AA24;abatacept
+L04AA25;eculizumab
+L04AA26;ofatumumab
+L04AA27;fingolimod
+L04AA28;eltrombopag
+L04AA29;tofacitinib
+L04AA31;teriflunomide
+L04AA32;apremilast
+L04AA33;vedolizumab
+L04AA34;alemtuzumab
+L04AA36;selective immunosuppressants
+L04AA37;baricitinib
+L04AA42;siponimod
+L04AB;Tumor necrosis factor alpha (TNF-α) inhibitors
+L04AB01;etanercept
+L04AB02;infliximab
+L04AB04;adalimumab
+L04AB05;certolizumab pegol
+L04AB06;golimumab
+L04AC;Interleukin inhibitors
+L04AC01;valdecoxib
+L04AC03;anakinra
+L04AC04;rilonacept
+L04AC05;ustekinumab
+L04AC07;tocilizumab
+L04AC08;canakinumab
+L04AC10;secukinumab
+L04AC11;lopinavir and ritonavir
+L04AC12;brodalumab
+L04AC13;ixekizumab
+L04AC14;sarilumab
+L04AC17;tildrakizumab
+L04AD;Calcineurin inhibitors
+L04AD02;tacrolimus
+L04AD03;voclosporin
+L04AX;Other immunosuppressive agents
+L04AX02;thalidomide
+L04AX03;methotrexate
+L04AX04;lenalidomide
+L04AX05;pirfenidone
+L04AX06;pomalidomide
+L04AX07;dimethyl fumarate
