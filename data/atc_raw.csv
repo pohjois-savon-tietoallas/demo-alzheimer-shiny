@@ -1,4 +1,4 @@
-atc; label
+atc_code; label
 N02;Analgesics
 N02A;Opioids
 N02AB;Phenylpiperidine derivatives
@@ -206,7 +206,6 @@ L01XE38;cobimetinib
 L01XE39;midostaurin
 L01XE41;binimetinib
 L01XE42;ribociclib
-Kisqali (active)
 L01XE43;brigatinib
 L01XE44;lorlatinib
 L01XE45;neratinib

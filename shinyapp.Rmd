@@ -18,7 +18,7 @@ library(survival)
 library(survminer)
 
 # Load datasets
-load(file="./datasets/alzdatasets.RData", verbose=T)
+load(file="./datasets/backup_alzdatasets.RData", verbose=T)
 
 # disable scientific number formatting
 options(scipen=999) 
@@ -178,9 +178,7 @@ renderPlotly({
   drugs %>% 
     left_join(data_pop()) %>% 
     filter(!is.na(alz_age)) %>% 
-    mutate(#atc3 = substr(atc, 1,3),
-           #atc5 = substr(atc, 1,5),
-           atc_code = substr(atc, 1, atc_level),
+    mutate(atc_code = substr(atc, 1, atc_level),
            gap = otpvm - erko307_pv) %>% 
     filter(gap >= input$medicines_gap[1], gap <= input$medicines_gap[2]) %>% 
     select(idnum, atc_code) %>% 
@@ -193,11 +191,20 @@ renderPlotly({
     ) %>% 
     select(atc_code, time, percentage) -> d1
   
-  ggplot(data = d1) +
-    geom_bar(aes(x=atc_code, y=percentage, fill=atc_code), stat="identity") +
+  ## add labels
+  d1 <- d1 %>% left_join(atc_labels)
+  
+  ggplot(data = d1, aes(x=atc_code, y=percentage, fill=atc_code)) +
+    geom_bar(stat="identity") +
+    geom_text(aes(label = paste0(atc_code, " ", label), 
+                  y = 50), 
+              position = position_dodge(0.9), 
+              hjust = "left",
+              vjust = "bottom") +
     coord_flip() + 
     scale_y_continuous(limits = c(0,100), breaks = c(0,25,50,75,100)) +
     labs(title=paste0("Medicine usage between ",input$medicines_gap[1], " and ", input$medicines_gap[2], " days before diagnose"), x= "ATC code", y="% of patients")
+  
   
 })
 
