@@ -18,7 +18,7 @@ library(survival)
 library(survminer)
 
 # Load datasets
-load(file="./datasets/backup_alzdatasets.RData", verbose=T)
+load(file="./datasets/alzdatasets.RData", verbose=T)
 
 # disable scientific number formatting
 options(scipen=999) 
@@ -53,14 +53,14 @@ radioButtons("gender",
 h3("Descriptives")
 
 sliderInput(inputId = "min_freq", 
-            label = "Minimum number of diagnoses", 
+            label = "Diagnose frequency", 
             min = 20, 
             max = 5000, 
             value = 100)
 
 selectInput(inputId = "atc_level", 
             label = "ATC level:", 
-            choices = c("atc3", "atc5", "atc"), 
+            choices = c("atc3", "atc4"), 
             selected = "atc3")
 
 sliderInput(inputId = "medicines_gap", 
@@ -106,7 +106,7 @@ data_pop <- reactive({
 <!-- # ``` -->
 
 
-Row
+Row {.tabset}
 -----------------------------------------------------------------------
 
 
@@ -122,10 +122,58 @@ renderPlotly({
         geom_bar(aes(x=alz_age_yrs, y=n, fill=sp), stat="identity") +
         labs(title = paste0("Population (n=", nrow(data_pop()),")" ), 
              subtitle = "by gender", caption = "", x="") + 
-        scale_fill_manual(values=c("dodgerblue3", "orchid2"))
+        scale_fill_manual(values=c("dodgerblue3", "orchid2")) + theme(legend.position="none")
       ggplotly(p, source="pop")
     })
 ```
+
+
+### Mortality
+
+```{r}
+renderPlotly({
+  
+  d1 <- data_pop() %>% 
+    mutate(died_after_diag = kuolpv - erko307_pv,
+           died_after_diag_cat = cut(as.integer(died_after_diag),
+                                     breaks=c(-Inf, 180, 365, 730, 1095, Inf),
+                                     labels = c("< half year", "0.5 - 1 year", "1-2 years", "2-3 years", "3+ years")
+                                     )
+           ) %>% 
+    filter(!is.na(died_after_diag_cat)) %>% 
+    group_by(died_after_diag_cat, sp) %>% 
+    summarise(n=n())
+
+  # mortality after diagnose
+  ggplot(d1) +
+    geom_bar(stat = "identity", aes(x=died_after_diag_cat, y=n, fill=sp)) + 
+    coord_flip() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    labs(title = "Mortality, days after the diagnose", x= "", y="") +
+    scale_fill_manual(values=c("dodgerblue3", "orchid2"))
+})
+```
+
+### Survival analysis (Kaplan-Meier)
+
+```{r}
+
+surv_object <- reactive({
+  d <- data_pop()
+  surv_object <- survival::Surv(time = d$survived, event = d$event)
+  return(surv_object)
+})
+ 
+renderPlot({
+  # predictors <- input$kaplanmeier
+  fit1 <- survfit(surv_object() ~ 1, data = data_pop())
+  # if(predictors == "sp") fit1 <- survfit(surv_object() ~ sp, data = data_pop())
+  # summary(fit1)
+  ggsurvplot(fit1, data = data_pop(), pval = TRUE)
+})
+```
+
+
 
 
 
@@ -134,7 +182,7 @@ renderPlotly({
 Row 
 -----------------------------------------------------------------------
 
-### Descriptives: care registery diagnoses on whole timeline
+### Descriptives: care registery diagnoses in whole timeline
 
 ```{r}
 # Make the wordcloud drawing predictable during a session
@@ -167,13 +215,13 @@ renderPlot({
 
 ```
 
-### Descriptives: medicine imbursements
+### Descriptives: medicines
 
 ```{r}
 renderPlotly({
   
   ## Medicines atc percentages, before diagnose
-  atc_level <- ifelse(input$atc_level == "atc3", 3, ifelse(input$atc_level == "atc5", 5, 7))
+  atc_level <- ifelse(input$atc_level == "atc3", 3, 4)
   
   drugs %>% 
     left_join(data_pop()) %>% 
@@ -198,12 +246,12 @@ renderPlotly({
     geom_bar(stat="identity") +
     geom_text(aes(label = paste0(atc_code, " ", label), 
                   y = 50), 
-              position = position_dodge(0.9), 
-              hjust = "left",
-              vjust = "bottom") +
+              # position = position_dodge(0.9), 
+              hjust = 0,
+              vjust = 0) +
     coord_flip() + 
     scale_y_continuous(limits = c(0,100), breaks = c(0,25,50,75,100)) +
-    labs(title=paste0("Medicine usage between ",input$medicines_gap[1], " and ", input$medicines_gap[2], " days before diagnose"), x= "ATC code", y="% of patients")
+    labs(title=paste0("Medicine usage between ",input$medicines_gap[1], " and ", input$medicines_gap[2], " days before diagnose"), x= "", y="% of patients") + theme(legend.position="none")
   
   
 })
@@ -217,49 +265,31 @@ Timeline
 Inputs {.sidebar}
 --------------------------------------------------------
 
-You can select from the timeline graph a bar according to certain year, which will show most common diagnoses on graph below. Select does not affect on mortality or survival analysis graphs.
-
+You can select from the timeline graph a bar according to certain year, which will show most common diagnoses on graph below. 
 
 ```{r}
-h3("Timeline")
-
-radioButtons(inputId = "tl_var",
-             label = "y-axis:",
-             choices = c("patients"),
-             selected = "patients"
-             )
-
-h3("Diagnoses")
-
-radioButtons(inputId = "tl_diagnose_x",
-             label = "x-axis:",
-             choices = c("patients", "patients_percentage", "days"),
-             selected = "patients"
-             )
-
-radioButtons(inputId = "tl_diagnose_y",
-             label = "y-axis:",
-             choices = c("patients", "patients_percentage", "days"),
-             selected = "days"
-             )
-
-# radioButtons(inputId = "tl_seq", 
-#              label = "Time variable:", 
-#              choices = c("Year", "Month"), 
-#              selected = "Year"
+# h3("Timeline")
+# 
+# radioButtons(inputId = "tl_var",
+#              label = "y-axis:",
+#              choices = c("patients"),
+#              selected = "patients"
 #              )
-# checkboxGroupInput(inputId = "tl_cases",  
-#               label = "Cases:", 
-#               choiceNames = c("Visits", "Hospitilizations", "Censoring", "Died") # , 
-#               # selected = c("Visits", "Hospitilizations", "Censoring", "Died")
-#               )
-# sliderInput(inputId = "tl_care_length", 
-#             label = "Hospitilization duration", 
-#             min = 1, 
-#             max = 3500, 
-#             value =c(0,3500),
-#             dragRange = T
-#             )
+# 
+# h3("Diagnoses")
+# 
+# radioButtons(inputId = "tl_diagnose_x",
+#              label = "x-axis:",
+#              choices = c("patients", "patients_percentage", "hospitalization days"),
+#              selected = "patients"
+#              )
+# 
+# radioButtons(inputId = "tl_diagnose_y",
+#              label = "y-axis:",
+#              choices = c("patients", "patients_percentage", "hospitalization days"),
+#              selected = "days"
+#              )
+
 ```
 
 
@@ -360,13 +390,13 @@ Row {.tabset}
 renderPlotly({
     p <- ggplot(data=tl()) +
       geom_bar(aes(x=time, 
-                   y=get(input$tl_var), 
+                   y=patients, 
                    group=source, 
                    fill=source), 
                stat="identity") +
-      labs(title = "Timeline of persons in hospitalizations. (Click the bar to get more detailed information of diagnoses)",
+      labs(title = "Population timeline (Click the bar to get more detailed information of diagnoses)",
            x="Year according to diagnose date", 
-           y=input$tl_var
+           y="patients"
   )
   
   ggplotly(p, source="timeline_graph")
@@ -381,54 +411,6 @@ renderPlotly({
 #   })
 # DT::dataTableOutput("timelineTable")
 ```
-
-
-### Mortality
-
-```{r}
-renderPlotly({
-  
-  d1 <- data_pop() %>% 
-    mutate(died_after_diag = kuolpv - erko307_pv,
-           died_after_diag_cat = cut(as.integer(died_after_diag),
-                                     breaks=c(-Inf, 180, 365, 730, 1095, Inf),
-                                     labels = c("< half year", "0.5 - 1 year", "1-2 years", "2-3 years", "3+ years")
-                                     )
-           ) %>% 
-    filter(!is.na(died_after_diag_cat)) %>% 
-    group_by(died_after_diag_cat, sp) %>% 
-    summarise(n=n())
-
-  # mortality after diagnose
-  ggplot(d1) +
-    geom_bar(stat = "identity", aes(x=died_after_diag_cat, y=n, fill=sp)) + 
-    coord_flip() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    labs(title = "Mortality, days after the diagnose", x= "", y="") +
-    scale_fill_manual(values=c("dodgerblue3", "orchid2"))
-})
-```
-
-### Survival analysis (Kaplan-Meier)
-
-```{r}
-
-surv_object <- reactive({
-  d <- data_pop()
-  surv_object <- survival::Surv(time = d$survived, event = d$event)
-  return(surv_object)
-})
- 
-renderPlot({
-  # predictors <- input$kaplanmeier
-  fit1 <- survfit(surv_object() ~ 1, data = data_pop())
-  # if(predictors == "sp") fit1 <- survfit(surv_object() ~ sp, data = data_pop())
-  # summary(fit1)
-  ggsurvplot(fit1, data = data_pop(), pval = TRUE)
-})
-```
-
-
 
 
 
@@ -455,11 +437,13 @@ renderPlotly({
   ## Plot diagnoses scatter plot
   p <- ggplot(data=tl_diagnoses()[tl_diagnoses()$year %in% s, ]) +
     # geom_point(aes(x=patients, y=days, group=pdgo)) +
-    geom_text(aes(x = get(input$tl_diagnose_x), 
-                  y = get(input$tl_diagnose_y), 
+    geom_text(aes(x = patients,  
+                  y = days, #get(input$tl_diagnose_y), 
                   group=pdgo, 
                   label = pdgo)) +
-    labs(title = title, x = input$tl_diagnose_x, y = input$tl_diagnose_y)
+    labs(title = title, 
+         x = "patients", 
+         y = "hospitalization days" )#input$tl_diagnose_y)
   
   ## output
   p
@@ -667,10 +651,27 @@ Medicines
 ==================
 
 
+Inputs {.sidebar}
+--------------------------------------------------------
+
+**Medicine reimbursements from Kela registry.** The Anatomical Therapeutic Chemical (ATC)  Classification System defines active ingredients of drugs to classes.  Timeline graph shows cumulative number of events when patients bought medicines. (Only reimbursement events are counted, not how many packages patience bought in the event.)
+
+You can select one or multiple ATC classes from table below. You can also select hierarchy level for overall plot.
+
+```{r}
+radioButtons(inputId = "atc_barclass",
+             label = "ATC level:",
+             choices = c("ATC3", "ATC4", "ATC5", "ATC6", "ATC7"),
+             selected = "ATC5"
+             )
+```
+
+
 Row {.tabset}
 -----------------------------------------------------------------------
 
-**Medicine reimbursements from Kela registry.** Cumulative number of cases. Only reimbursement action are counted, not how many packages patience bought. You can select from the table below medicines to the graph.
+
+### Timeline
 
 ```{r}
 drugs_data <- reactive({
@@ -716,6 +717,66 @@ renderPlot({
 })
 
 ```
+
+### Overall
+
+```{r}
+renderPlotly({
+  
+  ## Medicines atc percentages, before diagnose
+  atc_level <- substr(input$atc_barclass, 4, 5)
+    
+  s <- input$atc_table_rows_selected
+  codes <- as.character(unlist(atc_codes$atc[s]))
+
+  
+  drugs %>% 
+    left_join(data_pop()) %>% 
+    filter(!is.na(alz_age)) %>% 
+    mutate(atc3=substr(atc,1,3),
+           atc_code = substr(atc, 1, atc_level),
+           gap = otpvm - erko307_pv) %>% 
+    filter(atc3 %in% codes) %>% 
+    filter(gap >= input$medicines_gap[1], gap <= input$medicines_gap[2]) %>% 
+    select(idnum, atc_code) %>% 
+    group_by(atc_code) %>% 
+    summarise(n=n(),
+              uniq=length(unique(idnum)),
+              time="before") %>% 
+    mutate(
+      percentage = 100 * uniq / nrow(data_pop())
+    ) %>% 
+    select(atc_code, time, percentage) -> d1
+  
+  ## add labels
+  d1 <- d1 %>% left_join(atc_labels)
+  d1$label_name <- paste0(d1$atc_code, " ", d1$label)
+  
+  # palette
+  # basecolors <- colorRampPalette(brewer.pal(7, "Accent"))(123)
+  # colorlist <- basecolors[match(d1$atc3, unique(d1$atc3))]
+  
+  ggplot(data = d1, aes(x=label_name, y=percentage, fill=atc_code)) +
+    geom_bar(stat="identity") +
+    # geom_text(aes(label = paste0(atc_code, " ", label), 
+    #               y = 50), 
+    #           # position = position_dodge(0.9), 
+    #           hjust = 0,
+    #           vjust = 0) +
+    coord_flip() + 
+    # scale_y_continuous(limits = c(0,100), breaks = c(0,25,50,75,100)) +
+    # scale_fill_manual(name = "label_name", values = my_colors) +
+    labs(
+      title=paste0(""),
+      x="",
+      y="percentage (%) of selected population") + 
+    theme(legend.position="none")
+  
+  
+})
+```
+
+
 
 
 Row

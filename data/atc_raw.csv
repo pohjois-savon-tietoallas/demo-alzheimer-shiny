@@ -38,6 +38,32 @@ N05AX13;paliperidone
 N05AX14;iloperidone
 N05AX15;cariprazine
 N05AX16;brexpiprazole
+N05B;Anxiolytics
+N05BA;Benzodiazepine derivatives
+N05BA01;Diazepam
+N05BA02;Chlordiazepoxide
+N05BA03;Medazepam
+N05BA04;Oxazepam
+N05BA05;Potassium clorazepate
+N05BA06;Lorazepam
+N05BA07;Adinazolam
+N05BA08;Bromazepam
+N05BA09;Clobazam
+N05BA10;Ketazolam
+N05BA11;Prazepam
+N05BA12;Alprazolam
+N05BA13;Halazepam
+N05BA14;Pinazepam
+N05BA15;Camazepam
+N05BA16;Nordazepam
+N05BA17;Fludiazepam
+N05BA18;Ethyl loflazepate
+N05BA19;Etizolam
+N05BA21;Clotiazepam
+N05BA22;Cloxazolam
+N05BA23;Tofisopam
+N05BA24;Bentazepam
+N05BA56;Lorazepam, combinations
 N05C;Hypnotics and sedatives
 N05CD;Benzodiazepine derivatives
 N05CD08;midazolam

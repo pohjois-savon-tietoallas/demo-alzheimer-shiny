@@ -45,7 +45,7 @@ git config --global user.name "User Name"
 
 ## Acknowledgements
 
-We are grateful for all [contributors](https://github.com/pohjois-savon-tietoallas/demo-alzheimer-shiny/graphs/contributors/) including Juho Kopra and Pohjois-Savo Ai-Hub Team, and comments from clinical advisors from KUH. Also we are grateful for funders and [Neurocenter Finland](https://neurocenterfinland.fi/) which made this project possible to develop.
+We are grateful for all [contributors](https://github.com/pohjois-savon-tietoallas/demo-alzheimer-shiny/graphs/contributors/) including Juho Kopra and Pohjois-Savo Ai-Hub Team, and comments from clinical advisors from KUH. Also we are grateful for funders and [Neurocenter Finland](https://neurocenterfinland.fi/) which made this project possible to develop. We would also give big thanks for the [Bioinformatics Center](https://bioinformatics.uef.fi/) for hosting this Shiny App.
 
 <p align="center">
   <img src="./img/neurocenter_small.jpg" height="90" title="hover text">
