@@ -803,13 +803,22 @@ DT::dataTableOutput("atc_table")
 About
 ===================
 
+Purpose of this Shiny App is to demonstrate interactive usage of hospital datasets in explorative manner. All datasets are synthetic, but represent real world data. 
+</br>
+</br>
 Found a bug? If you know github, you can open an [issue](https://github.com/pohjois-savon-tietoallas/demo-alzheimer-shiny/issues). Otherwise contact the [creators](mailto:jani.miettinen@uef.fi?subject=I found a bug in Alzdemo).
 </br>
-**Datasets** are synthetic, but represent real world data. Original datasets are not available for users freely. If you are interested of the datasets, please contact [Reijo Sund](mailto:reijo.sund@uef.fi?subject=About alzdemo datasets).
+</br>
+</br>
+**Datasets** are synthetic, but represent real world data. Original datasets are not freely available. If you are interested of the datasets, please contact [Reijo Sund](mailto:reijo.sund@uef.fi?subject=About alzdemo datasets).
+</br>
+</br>
 </br>
 **Source code:** <https://github.com/pohjois-savon-tietoallas/demo-alzheimer-shiny>
 </br>
+</br>
 **Licence:** [CC BY](https://creativecommons.org/licenses/by/4.0/). This license allows reusers to distribute, remix, adapt, and build upon the material in any medium or format, so long as attribution is given to the creator. The license allows for commercial use.
+</br>
 </br>
 Copyright (c) 2020 Jani Miettinen </br>
 </br>
