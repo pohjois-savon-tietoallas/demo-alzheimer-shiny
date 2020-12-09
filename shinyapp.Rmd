@@ -192,6 +192,12 @@ renderPlot({
   d1 <- data_pop() %>%
     right_join(care_reg) %>% 
     filter(!is.na(alz_age)) %>% 
+    mutate(pdgo = substr(pdgo, 1,3),
+           pdge = substr(pdge, 1,3),
+           sdg1o = substr(sdg1o, 1,3),
+           sdg1e = substr(sdg1e, 1,3),
+           sdg2o = substr(sdg2o, 1,3),
+           sdg2o = substr(sdg2o, 1,3)) %>% ##### TODO THIS IS NEW, could be also in initial data
     select(idnum, adm_date, pdgo, pdge, sdg1o, sdg1e, sdg2o, sdg2o) %>% 
     pivot_longer(cols = c(pdgo, pdge, sdg1o, sdg1e, sdg2o, sdg2o), names_to = "Primary", values_to = "ICD10") %>% 
     filter(ICD10 != "") %>%  
@@ -267,6 +273,8 @@ Inputs {.sidebar}
 
 You can select from the timeline graph a bar according to certain year, which will show most common diagnoses on graph below. 
 
+Scatter plot shows only first main diagnoses (pdgo).
+
 ```{r}
 # h3("Timeline")
 # 
@@ -301,7 +309,8 @@ tl <- reactive({
   for(i in seq(from = -15, to = 15, by = 1) ){
     if(is.null(tl_year)){
       tl_year <- tl %>% 
-        filter( year_start <= i & year_end > i ) %>% # HUOM. tasaus tässä!
+        # filter( year_start <= i & year_end > i ) %>% # HUOM. tasaus tässä!
+        filter( (year_end > i-1 & year_end <= i)| (year_start < i & year_start > i-1)  ) %>% # HUOM. tasaus tässä!
         group_by(idnum) %>% ##
         filter(source_int == max(source_int)) %>%  ###
         ungroup() %>% 
@@ -316,7 +325,8 @@ tl <- reactive({
       tl_year <- tl_year %>% 
         rbind(
           tl %>% 
-            filter( year_start <= i & year_end > i ) %>% # HUOM. tasaus tässä!
+            # filter( year_start <= i & year_end > i ) %>% # HUOM. tasaus tässä!
+            filter( (year_end > i-1 & year_end <= i)| (year_start < i & year_start > i-1)  ) %>% # HUOM. tasaus tässä!
             group_by(idnum) %>% ##
             filter(source_int == max(source_int)) %>%  ###
             ungroup() %>% 
@@ -341,7 +351,8 @@ tl_diagnoses <- reactive({
   for(i in seq(-15, 15, by = 1)){
     if(is.null(tl_diags)){
       tl_diags <- tl_data %>% 
-        filter(source_int == 3 & year_start <= i & year_end > i ) %>% # HUOM. rajaus klikin mukaan
+        filter(source_int == 3 & ( (year_end > i-1 & year_end <= i) | (year_start < i & year_start > i-1)  ) ) %>% # HUOM. rajaus klikin mukaan
+        mutate(pdgo = substr(pdgo, 1,3)) %>% ##### TODO THIS IS NEW, could be also in initial data
         group_by(pdgo) %>% 
         summarise(
           .groups = 'drop',
@@ -357,7 +368,8 @@ tl_diagnoses <- reactive({
       tl_diags <- tl_diags %>% 
         rbind(
           tl_data %>% 
-            filter(source_int == 3 & year_start <= i & year_end > i ) %>% # HUOM. rajaus klikin mukaan
+            filter(source_int == 3 & ( (year_end > i-1 & year_end <= i) | (year_start < i & year_start > i-1)  ) ) %>% # HUOM. rajaus klikin mukaan
+            mutate(pdgo = substr(pdgo, 1,3)) %>% ##### TODO THIS IS NEW, could be also in initial data
             group_by(pdgo) %>% 
             summarise(
               .groups = 'drop',
@@ -367,7 +379,7 @@ tl_diagnoses <- reactive({
               days = sum(time_length(lhjlakpv+1 - lhjalkpv, "days"))
             ) %>% 
             mutate(
-              patients_percentage = 100 * patients / nrow(data_pop())
+              patients_percentage = round(100 * patients / nrow(data_pop()), digits = 4)
             )
       )
     }
@@ -419,7 +431,7 @@ renderPlotly({
 Row {.tabset}
 -----------------------------------------------------------------------
 
-### Most common diagnoses
+### Scatter plot
 
 ```{r}
 renderPlotly({
